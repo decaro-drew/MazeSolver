@@ -1,0 +1,48 @@
+import numpy as np
+## in order to use matplotlib library, you need to include the library (import)
+import matplotlib.pyplot as plt
+
+## create a maze data structure
+## the Z below is a 2D binary matrix with dimension is 101*101
+## each Z has 60% chance to be 0 and 40% chance to be 1
+Z = np.random.choice([0, 1], size=[101, 101], p=[.60, .40])
+
+col = np.random.randint(100)
+row = np.random.randint(100)
+while Z[row][col] == 1:
+    row = np.random.randint(100)
+    col = np.random.randint(100)
+
+start = Z[row][col]
+row2 = row
+col2 = col
+while (row2 == row and col2 == col) or Z[row2][col2] == 1:
+    row2 = np.random.randint(100)
+    col2 = np.random.randint(100)
+
+goal = Z[row2][col2]
+
+## This is where you start to plot the maze
+plt.figure()
+# The parameters in the main plotting function
+# (1) Z: the input maze you want to visualize
+# (2) cmap: This indicates the color map you're using. Here it is a binary map(white & black)
+# (3) interpolation: by setting to 'nearest', the image becomes more clear. You can delete it to
+#     see the difference.
+plt.imshow(Z, cmap=plt.cm.binary, interpolation='nearest')
+
+def highlight_cell(x,y, ax=None, **kwargs):
+    rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, **kwargs)
+    ax = ax or plt.gca()
+    ax.add_patch(rect)
+    return rect
+
+highlight_cell(col,row, color="limegreen", linewidth=3)
+highlight_cell(col2,row2, color="blue", linewidth=3)
+
+
+# This line hides the x and y coordinate. You can delete it to see the difference
+#plt.xticks([]), plt.yticks([])
+
+# This last line is a must to trigger the visualization
+plt.show()
