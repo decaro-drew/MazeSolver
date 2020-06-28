@@ -15,6 +15,7 @@ class node:
         self.blocked = blocked
         self.fval = gval+hval
         self.search = 0
+        self.actions = []
 
 ## create a maze data structure
 ## the Z below is a 2D binary matrix with dimension is 101*101
@@ -54,6 +55,22 @@ goal = S[row2][col2]
 
 #procedure ComputePath() goes here:
 def ComputePath():
+    print(len(open))
+    while goal.gval > open[0].fval:
+        open.sort(key=lambda node: node.fval)
+        temp = open.pop(0)
+        if temp.row + 1 <101 and S[temp.row+1][temp.col].blocked == False:
+            temp.actions.append("up")
+        if temp.row - 1 >= 0 and S[temp.row-1][temp.col].blocked == False:
+            temp.actions.append("down")
+        if temp.col + 1 < 101 and S[temp.row][temp.col+1].blocked == False:
+            temp.actions.append("right")
+        if temp.col -1 >= 0 and S[temp.row][temp.col-1].blocked == False:
+            temp.actions.append("left")
+        for acts in temp.actions:
+            #do i need to check fvals here?
+
+
 
 #procedure Main() goes here:
 counter = 0
@@ -62,16 +79,17 @@ while start.row != goal.row or start.col != goal.row:
     counter = counter +1
     start.gval = 0
     start.search = counter
-    goal.gval = None
+    goal.gval = 102 #I need to set this to infinity somehow
     goal.search = counter
     open = []
     closed = []
+    start.hval = abs(row-row2) + abs(col-col2)
     open.append(start)
     ComputePath()
     if open == None:
         print("I cannot reach the target")
         break
-    
+
 
 
 
