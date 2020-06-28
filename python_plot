@@ -2,10 +2,35 @@ import numpy as np
 ## in order to use matplotlib library, you need to include the library (import)
 import matplotlib.pyplot as plt
 
+
+#create node objects
+class node:
+    def __init__(self, row, col, gval, hval, parent, blocked, expanded):
+        self.row = row
+        self.col = col
+        self.gval = gval
+        self.hval = hval
+        self.parent = parent
+        self.expaned = expanded
+        self.blocked = blocked
+        self.fval = gval+hval
+        self.search = 0
+
 ## create a maze data structure
 ## the Z below is a 2D binary matrix with dimension is 101*101
 ## each Z has 60% chance to be 0 and 40% chance to be 1
 Z = np.random.choice([0, 1], size=[101, 101], p=[.60, .40])
+
+#here I'm creating a new matrix 'S' that's identical to Z, but it will be a matrix of nodes so we can store more data
+S = [[node(0,0, 0, 0, None, False, False) for i in range(101)] for j in range(101)]
+for a in range(101):
+    for b in range(101):
+        if Z[a][b] == 1:
+            S[a][b].blocked = True
+        else:
+            S[a][b].blocked = False
+        S[a][b].row = a
+        S[a][b].col = b
 
 col = np.random.randint(100)
 row = np.random.randint(100)
@@ -13,14 +38,45 @@ while Z[row][col] == 1:
     row = np.random.randint(100)
     col = np.random.randint(100)
 
-start = Z[row][col]
+#start = Z[row][col]
 row2 = row
 col2 = col
 while (row2 == row and col2 == col) or Z[row2][col2] == 1:
     row2 = np.random.randint(100)
     col2 = np.random.randint(100)
+#start = node(row, col, 0, abs(row-row2) + abs(col-col2), None, False, False)
+start = S[row][col]
+#goal = node(row2, col2, abs(row-row2) + abs(col-col2), 0, None, False, False)
+goal = S[row2][col2]
 
-goal = Z[row2][col2]
+
+#THIS IS WHERE FORWARD A* STARTS!!!!!!!!
+
+#procedure ComputePath() goes here:
+def ComputePath():
+
+#procedure Main() goes here:
+counter = 0
+#for all nodes in S, set the "search" to 0
+while start.row != goal.row or start.col != goal.row:
+    counter = counter +1
+    start.gval = 0
+    start.search = counter
+    goal.gval = None
+    goal.search = counter
+    open = []
+    closed = []
+    open.append(start)
+    ComputePath()
+    if open == None:
+        print("I cannot reach the target")
+        break
+    
+
+
+
+
+
 
 ## This is where you start to plot the maze
 plt.figure()
@@ -39,7 +95,6 @@ def highlight_cell(x,y, ax=None, **kwargs):
 
 highlight_cell(col,row, color="limegreen", linewidth=3)
 highlight_cell(col2,row2, color="blue", linewidth=3)
-
 
 # This line hides the x and y coordinate. You can delete it to see the difference
 #plt.xticks([]), plt.yticks([])
