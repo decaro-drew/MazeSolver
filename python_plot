@@ -1,6 +1,7 @@
 import numpy as np
 ## in order to use matplotlib library, you need to include the library (import)
 import matplotlib.pyplot as plt
+import math
 
 
 #create node objects
@@ -16,20 +17,21 @@ class node:
         self.fval = gval+hval
         self.search = 0
         self.actions = []
+        self.cost = 1
+    """def __lt__(self, other):
+        if self.fval == other.gval:
+            return self.gval < other.gval"""""
 
 ## create a maze data structure
 ## the Z below is a 2D binary matrix with dimension is 101*101
 ## each Z has 60% chance to be 0 and 40% chance to be 1
-Z = np.random.choice([0, 1], size=[101, 101], p=[.60, .40])
+Z = np.random.choice([0, 1], size=[101, 101], p=[.7, .3])
 
 #here I'm creating a new matrix 'S' that's identical to Z, but it will be a matrix of nodes so we can store more data
 S = [[node(0,0, 0, 0, None, False, False) for i in range(101)] for j in range(101)]
+
 for a in range(101):
     for b in range(101):
-        if Z[a][b] == 1:
-            S[a][b].blocked = True
-        else:
-            S[a][b].blocked = False
         S[a][b].row = a
         S[a][b].col = b
 
@@ -47,55 +49,184 @@ while (row2 == row and col2 == col) or Z[row2][col2] == 1:
     col2 = np.random.randint(100)
 #start = node(row, col, 0, abs(row-row2) + abs(col-col2), None, False, False)
 start = S[row][col]
+start.row = row
+start.col = col
 #goal = node(row2, col2, abs(row-row2) + abs(col-col2), 0, None, False, False)
 goal = S[row2][col2]
 
-
+"""type = "backwards"
+if type == "backwards":
+    tmp = start
+    start = goal
+    goal = tmp
+"""
 #THIS IS WHERE FORWARD A* STARTS!!!!!!!!
+def CheckClosed(closed, n):
+    for x in closed:
+        if x.row == n.row and x.col == n.col:
+            return True
+    return False
 
+def setBlock(S, n):
+    if n.row+1 <101:
+        if Z[n.row+1][n.col] == 1:
+            S[n.row+1][n.col].blocked = True
+            S[n.row + 1][n.col].cost = math.inf
+    if n.row-1 >= 0:
+        if Z[n.row-1][n.col] == 1:
+            S[n.row-1][n.col].blocked = True
+            S[n.row-1][n.col].cost = math.inf
+    if n.col+1 <101:
+        if Z[n.row][n.col+1] == 1:
+            S[n.row][n.col+1].blocked = True
+            S[n.row][n.col+1].cost = math.inf
+    if n.col-1 >=0:
+        if Z[n.row][n.col-1] == 1:
+            S[n.row][n.col-1].blocked = True
+            S[n.row][n.col-1].cost = math.inf
 #procedure ComputePath() goes here:
 def ComputePath():
-    print(len(open))
-    while goal.gval > open[0].fval:
-        open.sort(key=lambda node: node.fval)
-        temp = open.pop(0)
+    tracker = 0
+   # print("search number: " + str(b))
+    # val = open[0]
+    while goal.gval > open[0].fval: #if fval of s is no smaller than gval of goal, A* is over
+        found = False
+        temp = open.pop(0) #expand S from open list
+        temp.actions = []
+        closed.append(temp)
+        if tracker == 0:
+            setBlock(S, temp)
         if temp.row + 1 <101 and S[temp.row+1][temp.col].blocked == False:
-            temp.actions.append("up")
+            """if S[temp.row + 1][temp.col].gval > 0:
+                temp.actions.append(S[temp.row + 1][temp.col])
+            else:"""
+            n = node(temp.row + 1, temp.col, 0, 0, None, False, False)
+            temp.actions.append(n)
+            #print("a")
         if temp.row - 1 >= 0 and S[temp.row-1][temp.col].blocked == False:
-            temp.actions.append("down")
+            """if S[temp.row - 1][temp.col].gval > 0:
+                    temp.actions.append(S[temp.row - 1][temp.col])
+            else:"""
+            n = node(temp.row - 1, temp.col, 0, 0, None, False, False)
+            temp.actions.append(n)
+            #print("b")
         if temp.col + 1 < 101 and S[temp.row][temp.col+1].blocked == False:
-            temp.actions.append("right")
+            """if S[temp.row][temp.col + 1].gval > 0:
+                temp.actions.append(S[temp.row][temp.col + 1])
+            else:"""
+            n = node(temp.row, temp.col + 1, 0, 0, None, False, False)
+            temp.actions.append(n)
+            #print("c")
         if temp.col -1 >= 0 and S[temp.row][temp.col-1].blocked == False:
-            temp.actions.append("left")
-        for acts in temp.actions:
-            #do i need to check fvals here?
+            """if S[temp.row][temp.col - 1].gval > 0:
+                temp.actions.append(S[temp.row][temp.col - 1])
+            else:"""
+            n = node(temp.row, temp.col - 1, 0, 0, None, False, False)
+            temp.actions.append(n)
+            #print("d")
+        #if tracker == 0:
+          # print("action length for 0th iteration: " + str(len(temp.actions)))
+        temp.actions.sort(key=lambda node: (node.gval+abs(node.row-row2) + abs(node.col-col2)))
+        for succ in temp.actions:
+            """if len(finalpath) > 0:
+                for f in finalpath:
+                    if f.row == succ.row and f.col == succ.col:
+                        succ.gval = f.gval
+                        succ.fval = f.fval"""
+           # c  = c+1
+           # print(c)
+            #print(acts)
+            #succ = temp.actions.pop(0)
+            if CheckClosed(closed, succ) == False:
+                if succ.search < counter:
+                #print("apple")
+                    succ.gval = math.inf
+                    succ.search = counter
+                if succ.gval > temp.gval + temp.cost:
+                    #print("banana")
+                    succ.gval = temp.gval + temp.cost
+                    if succ.row == goal.row and succ.col == goal.col:
+                        goal.gval = succ.gval
+                       # print("goal found")
+                        found = True
+                    succ.parent = temp
+                #if succ is in open:
+                    for n in open:
+                        if n.row == succ.row and n.col == succ.col:
+                            open.remove(n)
+                    succ.gval = temp.gval+1
+                    succ.hval = abs(succ.row-row2) + abs(succ.col-col2)
+                    succ.fval = succ.gval + succ.hval
+                    open.append(succ)
+                    #this line below.. is sorting by smallest gval first
+                    open.sort(key=lambda node: (node.fval, node.gval))
+            if found:
+                return succ
+             #   print("returned in found")
+              #  return val
+        #open.sort(key=lambda node: (node.fval, node.gval))
+        tracker = tracker+1
+        if len(open) == 0:
+            print("bam")
+            return temp
+    #    print("open: " + str(open[0].fval) + "goal: " + str(goal.gval))
+    return open[0]
 
 
-
+b = 0
+print(goal.row)
+print(goal.col)
+print(start.row)
+print(start.col)
 #procedure Main() goes here:
 counter = 0
 #for all nodes in S, set the "search" to 0
-while start.row != goal.row or start.col != goal.row:
+finalpath = []
+while start.row != goal.row or start.col != goal.col:
+    #print("s row is: " + str(start.row) + "s col is: " + str(start.col))
+    #print("goal row is: " + str(goal.row) + "goal col is: " + str(goal.col))
+    path = []
     counter = counter +1
     start.gval = 0
     start.search = counter
-    goal.gval = 102 #I need to set this to infinity somehow
+    goal.gval = math.inf
     goal.search = counter
     open = []
     closed = []
-    start.hval = abs(row-row2) + abs(col-col2)
+    start.hval = abs(start.row-row2) + abs(start.col-col2)
     open.append(start)
-    ComputePath()
-    if open == None:
+    b = b+1
+    temp = ComputePath()
+    if len(open) == 0:
         print("I cannot reach the target")
         break
+    x = temp
+    while x.parent != None:
+        #print("here")
+        path.append(x)
+        x = x.parent
+    #if x.row == row and x.col == col:
+           #print("I did it!")
+           #break
+    start0 = start
+    path.reverse()
+    if len(path) > 0:
+        for y in path:
+            if Z[y.row][y.col] == 1:
+                break
+            finalpath.append(y)
+            start = y
+            """if start.row == goal.row and start.col == goal.col:
+                print("start is in goal")
+                break"""
+        if start0 == start:
+            break
+    print("gval: " + str(start.gval) + "fval: " + str(start.fval))
+    if start.gval == 0:
+        break
 
-
-
-
-
-
-
+    #start = temp
+print("building result")
 ## This is where you start to plot the maze
 plt.figure()
 # The parameters in the main plotting function
@@ -110,12 +241,68 @@ def highlight_cell(x,y, ax=None, **kwargs):
     ax = ax or plt.gca()
     ax.add_patch(rect)
     return rect
+if len(finalpath) > 0:
+    for x in finalpath:
+        highlight_cell(x.col, x.row, color = "orange", linewidth=3)
 
 highlight_cell(col,row, color="limegreen", linewidth=3)
 highlight_cell(col2,row2, color="blue", linewidth=3)
-
+# This last line is a must to trigger the visualization
+plt.show()
 # This line hides the x and y coordinate. You can delete it to see the difference
 #plt.xticks([]), plt.yticks([])
 
-# This last line is a must to trigger the visualization
-plt.show()
+
+
+"""
+        if tracker == 0:
+            if temp.row + 1 <101:# and Z[temp.row+1][temp.col] == 0:
+                if Z[temp.row+1][temp.col] == 0:
+                    if S[temp.row+1][temp.col].gval > 0:
+                        temp.actions.append(S[temp.row+1][temp.col])
+                    else:
+                        n = node(temp.row+1,temp.col, 0, 0, None, False, False)
+                        temp.actions.append(n)
+                        S[temp.row + 1][temp.col].blocked = False
+                else:
+                  #  print("hmmmm")
+                    S[temp.row+1][temp.col].blocked = True
+                    S[temp.row + 1][temp.col].cost = math.inf
+            if temp.row - 1 >= 0:# and Z[temp.row-1][temp.col] == 0:
+                if Z[temp.row-1][temp.col] == 0:
+                    if S[temp.row-1][temp.col].gval>0:
+                        temp.actions.append(S[temp.row-1][temp.col])
+                    else:
+                        n = node(temp.row - 1, temp.col, 0, 0, None, False, False)
+                        temp.actions.append(n)
+                        S[temp.row-1][temp.col].blocked = False
+                else:
+                    S[temp.row-1][temp.col].blocked = True
+                    S[temp.row - 1][temp.col].cost = math.inf
+            if temp.col + 1 < 101:# and Z[temp.row][temp.col+1].blocked == 0:
+                if Z[temp.row][temp.col+1] == 0:
+                    if S[temp.row][temp.col+1].gval>0:
+                        temp.actions.append(S[temp.row][temp.col+1])
+                    else:
+                        n = node(temp.row, temp.col+1, 0, 0, None, False, False)
+                        temp.actions.append(n)
+                        S[temp.row][temp.col+1].blocked = False
+                else:
+                    S[temp.row][temp.col+1].blocked = True
+                    S[temp.row][temp.col+1].cost = math.inf
+            if temp.col -1 >= 0:# and Z[temp.row][temp.col-1].blocked == 0:
+                if Z[temp.row][temp.col - 1] == 0:
+                    if S[temp.row][temp.col - 1].gval > 0:
+                        temp.actions.append(S[temp.row][temp.col - 1])
+                    else:
+                        n = node(temp.row, temp.col - 1, 0, 0, None, False, False)
+                        temp.actions.append(n)
+                        S[temp.row][temp.col - 1].blocked = False
+                else:
+                    S[temp.row][temp.col - 1].blocked = True
+                    S[temp.row][temp.col - 1].cost = math.inf
+                    #consider removing if gval>0 donwl below and maybe above too
+        else:
+        """
+
+
