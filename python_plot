@@ -2,7 +2,7 @@ import numpy as np
 ## in order to use matplotlib library, you need to include the library (import)
 import matplotlib.pyplot as plt
 import math
-
+import heapq
 
 #create node objects
 class node:
@@ -18,48 +18,16 @@ class node:
         self.search = 0
         self.actions = []
         self.cost = 1
-    """def __lt__(self, other):
-        if self.fval == other.gval:
-            return self.gval < other.gval"""""
 
-## create a maze data structure
-## the Z below is a 2D binary matrix with dimension is 101*101
-## each Z has 60% chance to be 0 and 40% chance to be 1
-Z = np.random.choice([0, 1], size=[101, 101], p=[.7, .3])
+    def __lt__(self, other):
+        if self.fval == other.fval:
+            if highG:
+                return self.gval > other.gval
+            else:
+                return self.gval < other.gval
+        return self.fval < other.fval
 
-#here I'm creating a new matrix 'S' that's identical to Z, but it will be a matrix of nodes so we can store more data
-S = [[node(0,0, 0, 0, None, False, False) for i in range(101)] for j in range(101)]
 
-for a in range(101):
-    for b in range(101):
-        S[a][b].row = a
-        S[a][b].col = b
-
-col = np.random.randint(100)
-row = np.random.randint(100)
-while Z[row][col] == 1:
-    row = np.random.randint(100)
-    col = np.random.randint(100)
-
-#start = Z[row][col]
-row2 = row
-col2 = col
-while (row2 == row and col2 == col) or Z[row2][col2] == 1:
-    row2 = np.random.randint(100)
-    col2 = np.random.randint(100)
-#start = node(row, col, 0, abs(row-row2) + abs(col-col2), None, False, False)
-start = S[row][col]
-start.row = row
-start.col = col
-#goal = node(row2, col2, abs(row-row2) + abs(col-col2), 0, None, False, False)
-goal = S[row2][col2]
-
-"""type = "backwards"
-if type == "backwards":
-    tmp = start
-    start = goal
-    goal = tmp
-"""
 #THIS IS WHERE FORWARD A* STARTS!!!!!!!!
 def CheckClosed(closed, n):
     for x in closed:
@@ -91,17 +59,24 @@ def ComputePath():
     # val = open[0]
     while goal.gval > open[0].fval: #if fval of s is no smaller than gval of goal, A* is over
         found = False
-        temp = open.pop(0) #expand S from open list
+        #temp = open.pop(0) #expand S from open list
+        temp = heapq.heappop(open)
         temp.actions = []
         closed.append(temp)
+        global expanded
+        expanded = expanded+1
         if tracker == 0:
-            setBlock(S, temp)
+            if type == "backwards":
+                setBlock(S, goal)
+            else:
+                setBlock(S, temp)
         if temp.row + 1 <101 and S[temp.row+1][temp.col].blocked == False:
             """if S[temp.row + 1][temp.col].gval > 0:
                 temp.actions.append(S[temp.row + 1][temp.col])
             else:"""
             n = node(temp.row + 1, temp.col, 0, 0, None, False, False)
             temp.actions.append(n)
+            #temp.actions.append(S[temp.row + 1][temp.col])
             #print("a")
         if temp.row - 1 >= 0 and S[temp.row-1][temp.col].blocked == False:
             """if S[temp.row - 1][temp.col].gval > 0:
@@ -109,6 +84,7 @@ def ComputePath():
             else:"""
             n = node(temp.row - 1, temp.col, 0, 0, None, False, False)
             temp.actions.append(n)
+            #temp.actions.append(S[temp.row - 1][temp.col])
             #print("b")
         if temp.col + 1 < 101 and S[temp.row][temp.col+1].blocked == False:
             """if S[temp.row][temp.col + 1].gval > 0:
@@ -116,6 +92,7 @@ def ComputePath():
             else:"""
             n = node(temp.row, temp.col + 1, 0, 0, None, False, False)
             temp.actions.append(n)
+            #temp.actions.append(S[temp.row][temp.col + 1])
             #print("c")
         if temp.col -1 >= 0 and S[temp.row][temp.col-1].blocked == False:
             """if S[temp.row][temp.col - 1].gval > 0:
@@ -123,10 +100,11 @@ def ComputePath():
             else:"""
             n = node(temp.row, temp.col - 1, 0, 0, None, False, False)
             temp.actions.append(n)
+            #temp.actions.append(S[temp.row][temp.col - 1])
             #print("d")
         #if tracker == 0:
           # print("action length for 0th iteration: " + str(len(temp.actions)))
-        temp.actions.sort(key=lambda node: (node.gval+abs(node.row-row2) + abs(node.col-col2)))
+        #temp.actions.sort(key=lambda node: (node.gval+abs(node.row-row2) + abs(node.col-col2)))
         for succ in temp.actions:
             """if len(finalpath) > 0:
                 for f in finalpath:
@@ -139,32 +117,36 @@ def ComputePath():
             #succ = temp.actions.pop(0)
             if CheckClosed(closed, succ) == False:
                 if succ.search < counter:
-                #print("apple")
                     succ.gval = math.inf
                     succ.search = counter
                 if succ.gval > temp.gval + temp.cost:
-                    #print("banana")
                     succ.gval = temp.gval + temp.cost
                     if succ.row == goal.row and succ.col == goal.col:
                         goal.gval = succ.gval
-                       # print("goal found")
                         found = True
                     succ.parent = temp
                 #if succ is in open:
                     for n in open:
                         if n.row == succ.row and n.col == succ.col:
+                            #open.remove(n)
                             open.remove(n)
+                            heapq.heapify(open)
                     succ.gval = temp.gval+1
-                    succ.hval = abs(succ.row-row2) + abs(succ.col-col2)
+                    if type == "backwards":
+                        succ.hval = abs(succ.row-goal.row) + abs(succ.col-goal.col)
+                    else:
+                        succ.hval = S[succ.row][succ.col].hval #abs(succ.row-row2) + abs(succ.col-col2)
                     succ.fval = succ.gval + succ.hval
-                    open.append(succ)
+                    #open.append(succ)
+                    heapq.heappush(open, succ)
                     #this line below.. is sorting by smallest gval first
-                    open.sort(key=lambda node: (node.fval, node.gval))
-            if found:
-                return succ
-             #   print("returned in found")
+                    #open.sort(key=lambda node: (node.fval, node.gval))
+            """if found:
+                print("returned in found")
+                return succ"""
               #  return val
         #open.sort(key=lambda node: (node.fval, node.gval))
+        heapq.heapify(open)
         tracker = tracker+1
         if len(open) == 0:
             print("bam")
@@ -173,84 +155,165 @@ def ComputePath():
     return open[0]
 
 
-b = 0
-print(goal.row)
-print(goal.col)
-print(start.row)
-print(start.col)
-#procedure Main() goes here:
-counter = 0
-#for all nodes in S, set the "search" to 0
-finalpath = []
-while start.row != goal.row or start.col != goal.col:
-    #print("s row is: " + str(start.row) + "s col is: " + str(start.col))
-    #print("goal row is: " + str(goal.row) + "goal col is: " + str(goal.col))
-    path = []
-    counter = counter +1
-    start.gval = 0
-    start.search = counter
-    goal.gval = math.inf
-    goal.search = counter
-    open = []
-    closed = []
-    start.hval = abs(start.row-row2) + abs(start.col-col2)
-    open.append(start)
-    b = b+1
-    temp = ComputePath()
-    if len(open) == 0:
-        print("I cannot reach the target")
-        break
-    x = temp
-    while x.parent != None:
-        #print("here")
-        path.append(x)
-        x = x.parent
-    #if x.row == row and x.col == col:
-           #print("I did it!")
-           #break
-    start0 = start
-    path.reverse()
-    if len(path) > 0:
-        for y in path:
-            if Z[y.row][y.col] == 1:
-                break
-            finalpath.append(y)
-            start = y
-            """if start.row == goal.row and start.col == goal.col:
-                print("start is in goal")
-                break"""
-        if start0 == start:
-            break
-    print("gval: " + str(start.gval) + "fval: " + str(start.fval))
-    if start.gval == 0:
-        break
-
-    #start = temp
-print("building result")
-## This is where you start to plot the maze
-plt.figure()
-# The parameters in the main plotting function
-# (1) Z: the input maze you want to visualize
-# (2) cmap: This indicates the color map you're using. Here it is a binary map(white & black)
-# (3) interpolation: by setting to 'nearest', the image becomes more clear. You can delete it to
-#     see the difference.
-plt.imshow(Z, cmap=plt.cm.binary, interpolation='nearest')
-
 def highlight_cell(x,y, ax=None, **kwargs):
     rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, **kwargs)
     ax = ax or plt.gca()
     ax.add_patch(rect)
     return rect
-if len(finalpath) > 0:
-    for x in finalpath:
-        highlight_cell(x.col, x.row, color = "orange", linewidth=3)
 
-highlight_cell(col,row, color="limegreen", linewidth=3)
-highlight_cell(col2,row2, color="blue", linewidth=3)
-# This last line is a must to trigger the visualization
-plt.show()
-# This line hides the x and y coordinate. You can delete it to see the difference
-#plt.xticks([]), plt.yticks([])
+
+## create a maze data structure
+## the Z below is a 2D binary matrix with dimension is 101*101
+## each Z has 60% chance to be 0 and 40% chance to be 1
+Z = np.random.choice([0, 1], size=[101, 101], p=[.7, .3])
+col = np.random.randint(100)
+row = np.random.randint(100)
+while Z[row][col] == 1:
+    row = np.random.randint(100)
+    col = np.random.randint(100)
+
+    #start = Z[row][col]
+row2 = row
+col2 = col
+while (row2 == row and col2 == col) or Z[row2][col2] == 1:
+    row2 = np.random.randint(100)
+    col2 = np.random.randint(100)
+#start = node(row, col, 0, abs(row-row2) + abs(col-col2), None, False, False)
+
+
+for i in range(4):
+    if i == 0:
+        print("Forward A* with high G-values:")
+        highG =True
+    if i == 1:
+        print("Forward A* with low G-values:")
+        highG = False
+    if i == 2:
+        highG = True
+        print("Backward A*:")
+        type = "backwards"
+    elif i == 3:
+        highG = True
+        print("Adaptive A*: ")
+        type = "adaptive"
+    else:
+        type == ""
+    print(type)
+    if type == "backwards":
+        tmp = start
+        start = goal
+        goal = tmp
+
+    #here I'm creating a new matrix 'S' that's identical to Z, but it will be a matrix of nodes so we can store more data
+    S = [[node(0,0, 0, 0, None, False, False) for i in range(101)] for j in range(101)]
+
+    for a in range(101):
+        for b in range(101):
+            S[a][b].row = a
+            S[a][b].col = b
+
+    start = S[row][col]
+    start.row = row
+    start.col = col
+    # goal = node(row2, col2, abs(row-row2) + abs(col-col2), 0, None, False, False)
+    goal = S[row2][col2]
+    for a in range(101):
+        for b in range(101):
+            S[a][b].hval = abs(S[a][b].row - row2) + abs(S[a][b].col - col2)
+
+
+    b = 0
+    print(goal.row)
+    print(goal.col)
+    print(start.row)
+    print(start.col)
+    #procedure Main() goes here:
+    counter = 0
+    expanded = 0
+    #for all nodes in S, set the "search" to 0
+    finalpath = []
+    while start.row != goal.row or start.col != goal.col:
+        #print("s row is: " + str(start.row) + "s col is: " + str(start.col))
+        #   print("goal row is: " + str(goal.row) + "goal col is: " + str(goal.col))
+        path = []
+        counter = counter +1
+        start.gval = 0
+        start.search = counter
+        goal.gval = math.inf
+        goal.search = counter
+        open = []
+        heapq.heapify(open)
+        closed = []
+        if type == "backwards":
+            start.hval = abs(start.row - row) + abs(start.col - col)
+        else:
+            start.hval = abs(start.row-row2) + abs(start.col-col2)
+        start.fval = start.gval+start.hval
+        open.append(start)
+        b = b+1
+        temp = ComputePath()
+        if type == "adaptive":
+            for c in closed:
+                S[c.row][c.col].hval = goal.gval - c.gval
+        #print("return pos is: " +str(temp.row) + " " + str(temp.col))
+        if len(open) == 0:
+            print("I cannot reach the target")
+            break
+        x = temp
+        while x.parent != None:
+            # print(str(x.row) + " " + str(x.col))
+            path.append(x)
+            x = x.parent
+    #if x.row == row and x.col == col:
+           #print("I did it!")
+           #break
+    #start0 = start
+        #goal0 = goal
+        if type != "backwards":
+            path.reverse()
+        if len(path) > 0:
+            for y in path:
+                if Z[y.row][y.col] == 1:
+                    break
+                finalpath.append(y)
+                if type == "backwards":
+                    goal = y
+                else:
+                    start = y
+            """if start.row == goal.row and start.col == goal.col:
+                print("start is in goal")
+                break"""
+        """if goal0 == goal:
+        break"""
+        #print("new s row is: " + str(start.row) + "s col is: " + str(start.col))
+        #print("new goal row is: " + str(goal.row) + "goal col is: " + str(goal.col))
+        #print("gval: " + str(start.gval) + "fval: " + str(start.fval))
+        if type == "backwards" and goal.hval == 0:
+            break
+
+    # This line hides the x and y coordinate. You can delete it to see the difference
+    # plt.xticks([]), plt.yticks([])
+    #start = temp
+    print("Expanded " + str(expanded) + " nodes")
+    #print("building result")
+
+    ## This is where you start to plot the maze
+    plt.figure()
+        # The parameters in the main plotting function
+        # (1) Z: the input maze you want to visualize
+        # (2) cmap: This indicates the color map you're using. Here it is a binary map(white & black)
+        # (3) interpolation: by setting to 'nearest', the image becomes more clear. You can delete it to
+        #     see the difference.
+    plt.imshow(Z, cmap=plt.cm.binary, interpolation='nearest')
+    if len(finalpath) > 0:
+           for x in finalpath:
+               highlight_cell(x.col, x.row, color="orange", linewidth=3)
+
+    highlight_cell(col, row, color="limegreen", linewidth=3)
+    highlight_cell(col2, row2, color="blue", linewidth=3)
+        # This last line is a must to trigger the visualization
+    plt.show()
+    expanded =0
 
 
 
@@ -305,4 +368,187 @@ plt.show()
         else:
         """
 
+
+
+"""
+class MinHeap:
+
+    def __init__(self, highG):
+        #self.maxsize = maxsize
+        self.h = []
+        self.highG = highG
+        self.size = 0
+        #self.Heap = [0] * (self.maxsize + 1)
+        #self.Heap[0] = -1 * sys.maxsize
+        #self.FRONT = 1
+
+    # Function to return the position of
+    # parent for the node currently
+    # at pos
+    def parent(self, pos):
+        return pos // 2
+
+    # Function to return the position of
+    # the left child for the node currently
+    # at pos
+    def leftChild(self, pos):
+        return 2 * pos
+
+    # Function to return the position of
+    # the right child for the node currently
+    # at pos
+    def rightChild(self, pos):
+        return (2 * pos) + 1
+
+    # Function that returns true if the passed
+    # node is a leaf node
+    def isLeaf(self, pos):
+        if pos >= (self.size // 2) and pos <= self.size:
+            return True
+        return False
+
+     # Function to swap two nodes of the heap
+    def swap(self, fpos, spos):
+         self.h[fpos], self.h[spos] = self.h[spos], self.h[fpos]
+
+    # Function to heapify the node at pos
+    def minHeapify(self, pos):
+
+        # If the node is a non-leaf node and greater
+        # than any of its child
+        if not self.isLeaf(pos):
+            if (self.h[pos].fval > self.h[self.leftChild(pos)].fval or
+                    self.h[pos].fval > self.h[self.rightChild(pos)].fval):
+
+                # Swap with the left child and heapify
+                # the left child
+                if self.h[self.leftChild(pos)].fval < self.h[self.rightChild(pos)].fval:
+                    self.swap(pos, self.leftChild(pos))
+                    self.minHeapify(self.leftChild(pos))
+
+                elif self.h[self.leftChild(pos)].fval == self.h[self.rightChild(pos)].fval:
+                    if self.highG == True:
+                        #if left child has higher g-value
+                        if self.h[self.leftChild(pos)].gval > self.h[self.rightChild(pos)].gval:
+                            self.swap(pos, self.leftChild(pos))
+                            self.minHeapify(self.leftChild(pos))
+                        # if right child has higher g-value
+                        else:
+                            self.swap(pos, self.rightChild(pos))
+                            self.minHeapify(self.rightChild(pos))
+
+                        #for lower g-vals:
+                    else:
+                        # if left child has lower g-value
+                        if self.h[self.leftChild(pos)].gval < self.h[self.rightChild(pos)].gval:
+                            self.swap(pos, self.leftChild(pos))
+                            self.minHeapify(self.leftChild(pos))
+                        # if right child has lower g-value
+                        else:
+                            self.swap(pos, self.rightChild(pos))
+                            self.minHeapify(self.rightChild(pos))
+                    # Swap with the right child and heapify
+                # the right child
+                else:
+                    self.swap(pos, self.rightChild(pos))
+                    self.minHeapify(self.rightChild(pos))
+
+            elif (self.h[pos].fval == self.h[self.leftChild(pos)].fval or
+                    self.h[pos].fval == self.h[self.rightChild(pos)].fval):
+
+                #if parent and 2 children have equal fvals
+                if(self.h[pos].fval == self.h[self.leftChild(pos)].fval and
+                    self.h[pos].fval == self.h[self.rightChild(pos)].fval):
+                    if self.highG:
+                        if self.h[self.leftChild(pos)].gval > self.h[self.rightChild(pos)].gval:
+                            if self.h[self.leftChild(pos)].gval > self.h[pos].gval:
+                                self.swap(pos, self.leftChild(pos))
+                                self.minHeapify(self.leftChild(pos))
+                        else:
+                            if self.h[self.leftChild(pos)].gval > self.h[pos].gval:
+                                self.swap(pos, self.leftChild(pos))
+                                self.minHeapify(self.leftChild(pos))
+
+                # Swap with the left child and heapify
+                # the left child
+                if self.highG == True:
+
+                    if self.h[self.leftChild(pos)].gval > self.h[self.rightChild(pos)].gval:
+                        self.swap(pos, self.leftChild(pos))
+                        self.minHeapify(self.leftChild(pos))
+
+                    # Swap with the right child and heapify
+                    # the right child
+                    else:
+                        self.swap(pos, self.rightChild(pos))
+                        self.minHeapify(self.rightChild(pos))
+                else:
+                    if self.h[self.leftChild(pos)].gval < self.h[self.rightChild(pos)].fval:
+                        self.swap(pos, self.leftChild(pos))
+                        self.minHeapify(self.leftChild(pos))
+
+                    # Swap with the right child and heapify
+                    # the right child
+                    else:
+                        self.swap(pos, self.rightChild(pos))
+                        self.minHeapify(self.rightChild(pos))
+
+    # Function to insert a node into the heap
+    def insert(self, element):
+        if self.size >= self.maxsize:
+            return
+        self.size += 1
+        self.Heap[self.size] = element
+
+        current = self.size
+
+        while self.Heap[current] < self.Heap[self.parent(current)]:
+            self.swap(current, self.parent(current))
+            current = self.parent(current)
+
+
+    # Function to build the min heap using
+    # the minHeapify function
+    def minHeap(self):
+        for pos in range(self.size // 2, 0, -1):
+            self.minHeapify(pos)
+
+            # Function to remove and return the minimum
+
+    # element from the heap
+    def remove(self):
+        popped = self.Heap[self.FRONT]
+        self.Heap[self.FRONT] = self.Heap[self.size]
+        self.size -= 1
+        self.minHeapify(self.FRONT)
+        return popped
+
+ # Function to print the contents of the heap
+    def Print(self):
+        for i in range(1, (self.size // 2) + 1):
+            print(" PARENT : " + str(self.Heap[i]) + " LEFT CHILD : " +
+                  str(self.Heap[2 * i]) + " RIGHT CHILD : " +
+                  str(self.Heap[2 * i + 1]))
+                  class heap:
+    h = []
+    def __init__(self, type):
+        self.type = type
+        self.h = []
+    def parent(self, ind):
+        return ind/2
+    def left(self, ind):
+        return 2*ind
+    def right(self, ind):
+        return 2*ind+1
+    def isLeaf(self, ind):
+        if ind >= (len(self.h)/2) and ind <= len(self.h):
+            return True
+        return False
+    def swap(self, a, b):
+        tmp = h[a]
+        h[a] = h[b]
+        h[b] = tmp
+    #def insert(self, x):
+
+"""
 
