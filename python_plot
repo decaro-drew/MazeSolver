@@ -198,7 +198,7 @@ for i in range(4):
         type = "adaptive"
     else:
         type == ""
-    print(type)
+    #print(type)
     if type == "backwards":
         tmp = start
         start = goal
@@ -223,10 +223,11 @@ for i in range(4):
 
 
     b = 0
-    print(goal.row)
-    print(goal.col)
-    print(start.row)
-    print(start.col)
+    #print(goal.row)
+    #print(goal.col)
+    
+    #print(start.row)
+    #print(start.col)
     #procedure Main() goes here:
     counter = 0
     expanded = 0
