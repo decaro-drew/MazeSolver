@@ -3,8 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import heapq
-
+import sys
 #create node objects
+
+class x:
+    def __init__(self):
+        self.a = 0
+
+
+#print(sys.getsizeof(x))
 class node:
     def __init__(self, row, col, gval, hval, parent, blocked, expanded):
         self.row = row
@@ -12,7 +19,6 @@ class node:
         self.gval = gval
         self.hval = hval
         self.parent = parent
-        self.expaned = expanded
         self.blocked = blocked
         self.fval = gval+hval
         self.search = 0
@@ -26,7 +32,6 @@ class node:
             else:
                 return self.gval < other.gval
         return self.fval < other.fval
-
 
 #THIS IS WHERE FORWARD A* STARTS!!!!!!!!
 def CheckClosed(closed, n):
@@ -106,6 +111,7 @@ def ComputePath():
           # print("action length for 0th iteration: " + str(len(temp.actions)))
         #temp.actions.sort(key=lambda node: (node.gval+abs(node.row-row2) + abs(node.col-col2)))
         for succ in temp.actions:
+
             """if len(finalpath) > 0:
                 for f in finalpath:
                     if f.row == succ.row and f.col == succ.col:
@@ -149,7 +155,6 @@ def ComputePath():
         heapq.heapify(open)
         tracker = tracker+1
         if len(open) == 0:
-            print("bam")
             return temp
     #    print("open: " + str(open[0].fval) + "goal: " + str(goal.gval))
     return open[0]
@@ -183,26 +188,18 @@ while (row2 == row and col2 == col) or Z[row2][col2] == 1:
 
 for i in range(4):
     if i == 0:
-        print("Forward A* with high G-values:")
         highG =True
     if i == 1:
-        print("Forward A* with low G-values:")
         highG = False
     if i == 2:
         highG = True
-        print("Backward A*:")
         type = "backwards"
     elif i == 3:
         highG = True
-        print("Adaptive A*: ")
         type = "adaptive"
     else:
         type == ""
     #print(type)
-    if type == "backwards":
-        tmp = start
-        start = goal
-        goal = tmp
 
     #here I'm creating a new matrix 'S' that's identical to Z, but it will be a matrix of nodes so we can store more data
     S = [[node(0,0, 0, 0, None, False, False) for i in range(101)] for j in range(101)]
@@ -221,13 +218,17 @@ for i in range(4):
         for b in range(101):
             S[a][b].hval = abs(S[a][b].row - row2) + abs(S[a][b].col - col2)
 
+    if type == "backwards":
+        tmp = start
+        start = goal
+        goal = tmp
+
 
     b = 0
-    #print(goal.row)
-    #print(goal.col)
-    
-    #print(start.row)
-    #print(start.col)
+    """print(goal.row)
+    print(goal.col)
+    print(start.row)
+    print(start.col)"""
     #procedure Main() goes here:
     counter = 0
     expanded = 0
@@ -295,7 +296,14 @@ for i in range(4):
     # This line hides the x and y coordinate. You can delete it to see the difference
     # plt.xticks([]), plt.yticks([])
     #start = temp
-    print("Expanded " + str(expanded) + " nodes")
+    if i == 0:
+        print("Forward A* high g-values: " + str(expanded))
+    elif i == 1:
+        print("Forward A* low g-values: " + str(expanded))
+    elif i == 2:
+        print("Backward A*: " + str(expanded))
+    elif i == 3:
+        print("Adaptive A*: " + str(expanded))
     #print("building result")
 
     ## This is where you start to plot the maze
